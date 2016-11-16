@@ -115,10 +115,25 @@ struct thread
 	/* prj2_2 */
 	struct list file_list;
 
+
+	//!!
+	bool init_childlist_flag;
+	bool exit_accepted;
+
+	tid_t waitfor;
+
+
+	
+	int fork_cnt;//!!
+	struct thread* parent;
+
 #endif
 
     /* Owned by thread.c. */
 	unsigned magic;                     /* Detects stack overflow. */
+
+	
+
 
   };
 

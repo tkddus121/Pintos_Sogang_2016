@@ -34,17 +34,10 @@ struct file_nth* find_by_fd(int fd);
 static struct file* find_nth_file(int file_num);
 static void syscall_handler (struct intr_frame *);
 
-
-
 void
 syscall_init (void) 
 {
 	/* prj2_2 */
-
-	sema_init( &mutex,1);
-	sema_init( &wrt, 1);
-	rd_cnt = 0;
-
 	lock_init( &open_lock);
 	sys_fd = 2;
 	/*   */
@@ -205,19 +198,7 @@ int read(int fd, void* buffer, unsigned size)
 
 			if( fp != NULL)
 			{
-				sema_down(&mutex);
-				rd_cnt++;
-
-				if(rd_cnt == 1)
-					sema_down( &wrt );
-				sema_up(&mutex);
-
 				ret = file_read(fp->f, (void*)buffer,size);
-				sema_down(&mutex);
-				rd_cnt--;
-				if( rd_cnt == 0)
-					sema_up(&wrt);
-				sema_up(&mutex);
 			}
 
 		}
@@ -253,9 +234,7 @@ int write(int fd, const void *buffer,unsigned size)
 			fp = find_by_fd(fd);
 			if( fp != NULL)
 			{
-				sema_down(&wrt);
 				ret = file_write(fp->f,buffer,size);
-				sema_up(&wrt);
 			}
 			return ret;
 		}
@@ -354,10 +333,8 @@ int open(const char *file)
 		file_deny_write(fp->f);
 	}
 
-
 	//give sys_fd each files. 
 	//This step, make each file atomical thread using lock.
-	
 	
 	fp->fd = sys_fd++;
 
@@ -418,6 +395,8 @@ int filesize(int fd){
 		if( t ->fd == fd)
 		{
 
+			if (t->fd == NULL)
+				exit(-1);
 			return file_length(t->f);
 		}
 	}

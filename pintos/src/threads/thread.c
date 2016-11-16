@@ -103,6 +103,9 @@ thread_init (void)
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
+
+  /* prj2_2 */
+  initial_thread->fork_cnt=0;
   initial_thread->tid = allocate_tid ();
 }
 
@@ -180,7 +183,10 @@ thread_create (const char *name, int priority,
   enum intr_level old_level;
 
   ASSERT (function != NULL);
-
+  //!!
+  if(thread_current()->fork_cnt>30)
+	  return TID_ERROR;
+  //!!
   /* Allocate thread. */
   t = palloc_get_page (PAL_ZERO);
   if (t == NULL)
@@ -189,13 +195,25 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+	
+#ifdef USERPROG//!!
+t->parent=thread_current();
 
+#endif//!!
 
  // initial_thread->fork_cnt = 0;
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
   old_level = intr_disable ();
+	
+  //!!
+  t->fork_cnt=t->parent->fork_cnt+1;
+
+
+
+
+  //!!
 
 
   /* prj2_2 */

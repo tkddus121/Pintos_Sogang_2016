@@ -104,11 +104,12 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   
   
+  /* prj2_2 */
   //success = load (token, &if_.eip, &if_.esp);
   lock_acquire(&me_lock);
   success = load (file_name, &if_.eip, &if_.esp);
-
   lock_release(&me_lock);
+
   /* If load failed, quit. */
    
   //palloc_free_page (token);

@@ -23,10 +23,6 @@
 
 
 /* prj2_2 */
-struct semaphore mutex;
-struct semaphore wrt;
-int rd_cnt;
-
 static struct lock open_lock;
 int sys_fd = 2;
 

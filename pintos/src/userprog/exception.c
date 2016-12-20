@@ -6,6 +6,10 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+/*prj1*/
+#include "userprog/syscall.h"
+#include "threads/vaddr.h"
+#include "threads/palloc.h"
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
@@ -150,8 +154,73 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
 
-  /* Page Fault handling */
+  /* prj3 */
 
+  int count = 0;
+
+  if (not_present == false)
+  {
+	  count++;
+  }
+  if (write == false)
+  {
+	  count++;
+  }
+  if (user == false)
+  {
+	  count++;
+  }
+  if (count != 0)
+  {
+	  exit(-1);
+  }
+
+  if (fault_addr == NULL)
+  {
+	  exit(-1);
+  }
+
+  if (is_user_vaddr(fault_addr))
+  {
+	  //printf("\n\nSS\n\n");
+	  size_t page_num = (PHYS_BASE - pg_round_down(fault_addr)) / PGSIZE;
+	  if (page_num>2048)
+	  {
+		  exit(-1);
+	  }
+	  void *grow_ps = pg_round_down(fault_addr);
+	  void *range_point;
+
+	  for (range_point = PHYS_BASE - PGSIZE; range_point >= pg_round_up(fault_addr); range_point = range_point - PGSIZE)
+	  {
+		  if (pagedir_get_page(thread_current()->pagedir, range_point) == NULL)break;
+		  page_num = page_num - 1;
+	  }
+
+	  for (; page_num != 0; page_num = page_num - 1)
+	  {
+		  void *page_temp = palloc_get_page(PAL_USER);
+		  if (page_temp != NULL)
+		  {
+			  pagedir_set_page(thread_current()->pagedir, grow_ps, page_temp, true);
+		  }
+		  else
+		  {
+			  exit(-1);
+		  }
+		  grow_ps = grow_ps + PGSIZE;
+	  }
+  }
+  else
+  {
+	  exit(-1);
+  }
+
+
+
+  /*Prj2_1 or 2 Page Fault handling */
+
+  /*
   if(  !user || is_kernel_vaddr(fault_addr) || not_present == true)
 	  exit(-1);
 
@@ -159,14 +228,19 @@ page_fault (struct intr_frame *f)
   if(write)
 	  exit(-1);
 
+	  */
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
+  
+  /*
   printf ("Page fault at %p: %s error %s page in %s context.\n",
           fault_addr,
           not_present ? "not present" : "rights violation",
           write ? "writing" : "reading",
           user ? "user" : "kernel");
   kill (f);
+*/
+  
 }
 

@@ -6,7 +6,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
-/*prj1*/
+/*prj3*/
 #include "userprog/syscall.h"
 #include "threads/vaddr.h"
 #include "threads/palloc.h"
@@ -132,6 +132,9 @@ page_fault (struct intr_frame *f)
   bool user;         /* True: access by user, false: access by kernel. */
   void *fault_addr;  /* Fault address. */
 
+  int page_cnt = 0;     /* Used Prj3 Page_fault handling */
+
+
   /* Obtain faulting address, the virtual address that was
      accessed to cause the fault.  It may point to code or to
      data.  It is not necessarily the address of the instruction
@@ -154,69 +157,53 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
 
-  /* prj3 */
+  /* prj3  Page_fault handling */
 
-  int count = 0;
 
-  if (not_present == false)
-  {
-	  count++;
-  }
-  if (write == false)
-  {
-	  count++;
-  }
-  if (user == false)
-  {
-	  count++;
-  }
-  if (count != 0)
-  {
+  /* Count page fault number */
+  if (write == false)page_cnt++;
+  if (user == false)page_cnt++;
+  if (not_present == false)page_cnt++;
+
+  /* Check is page fault */
+  if (page_cnt != 0 || fault_addr == NULL)
 	  exit(-1);
-  }
 
-  if (fault_addr == NULL)
+  /* page fault handle */
+  if ( is_user_vaddr(fault_addr) )
   {
-	  exit(-1);
-  }
-
-  if (is_user_vaddr(fault_addr))
-  {
-	  //printf("\n\nSS\n\n");
-	  size_t page_num = (PHYS_BASE - pg_round_down(fault_addr)) / PGSIZE;
-	  if (page_num>2048)
-	  {
+	  size_t page_num = (PHYS_BASE - pg_round_down(fault_addr)) / PGSIZE; 
+	  void *range_pnt;
+	  void *grow_ps = pg_round_down( fault_addr );
+	
+	  /* If page number over max number */
+	  if ( page_num > MAX_PAGE_NUM )
 		  exit(-1);
-	  }
-	  void *grow_ps = pg_round_down(fault_addr);
-	  void *range_point;
 
-	  for (range_point = PHYS_BASE - PGSIZE; range_point >= pg_round_up(fault_addr); range_point = range_point - PGSIZE)
+	  for (range_pnt = PHYS_BASE - PGSIZE; 
+			  range_pnt >= pg_round_up(fault_addr); 
+			  range_pnt = range_pnt - PGSIZE)
 	  {
-		  if (pagedir_get_page(thread_current()->pagedir, range_point) == NULL)break;
-		  page_num = page_num - 1;
+		  if ( pagedir_get_page( thread_current()->pagedir, range_pnt ) == NULL )
+			  break; 
+		  --page_num;
 	  }
 
-	  for (; page_num != 0; page_num = page_num - 1)
+	  for (; page_num != 0; --page_num)
 	  {
-		  void *page_temp = palloc_get_page(PAL_USER);
-		  if (page_temp != NULL)
-		  {
-			  pagedir_set_page(thread_current()->pagedir, grow_ps, page_temp, true);
-		  }
-		  else
-		  {
+		  void *page_tmp = palloc_get_page(PAL_USER);
+		  if (page_tmp == NULL)
 			  exit(-1);
-		  }
-		  grow_ps = grow_ps + PGSIZE;
+		  else
+			  pagedir_set_page(thread_current()->pagedir, grow_ps, page_tmp, true);
+		  
+		  grow_ps +=  PGSIZE;
 	  }
   }
   else
   {
 	  exit(-1);
   }
-
-
 
   /*Prj2_1 or 2 Page Fault handling */
 
